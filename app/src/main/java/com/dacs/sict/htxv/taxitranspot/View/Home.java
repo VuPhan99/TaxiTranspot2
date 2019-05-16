@@ -1,6 +1,7 @@
 package com.dacs.sict.htxv.taxitranspot.View;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -14,16 +15,21 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dacs.sict.htxv.taxitranspot.Common.Common;
+import com.dacs.sict.htxv.taxitranspot.Common.SessionManager;
 import com.dacs.sict.htxv.taxitranspot.Helper.CustomInfoWindow;
 import com.dacs.sict.htxv.taxitranspot.Model.FCMResponse;
+import com.dacs.sict.htxv.taxitranspot.Model.InformationUser;
 import com.dacs.sict.htxv.taxitranspot.Model.Notification;
 import com.dacs.sict.htxv.taxitranspot.Model.Rider;
 import com.dacs.sict.htxv.taxitranspot.Model.Sender;
@@ -49,6 +55,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -56,6 +63,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
+
+import org.apache.commons.io.FileUtils;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -83,6 +92,11 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
 
     Marker mUserMarker;
 
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mDatabaseReference;
+    private FirebaseUser mFirebaseUser;
+
     //BottomSheet
     ImageView imgExpandable;
     BottomSheetRiderFragment mBottomSheet;
@@ -93,6 +107,8 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
     int radius = 1; // 1km
     int distance = 1; // 1km
     private static final int LIMIT = 3;
+
+    private SessionManager mSessionManager;
 
     IFCMService mService;
 
@@ -108,6 +124,28 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
         setSupportActionBar( toolbar );
 
 
+        //Check logged in or not
+//        CheckLoggedIn checkLoggedIn = new CheckLoggedIn(Home.this);
+//        Log.e("theUser","home.class" + checkLoggedIn.isLogged());
+//        if (checkLoggedIn.isLogged() == false) {
+//            Toast.makeText(this, "Please login to countinue", Toast.LENGTH_SHORT).show();
+//            Intent intent = new Intent(this,SPFlashScreen.class);
+//            this.startActivity(intent);
+//        }
+        try {
+            mSessionManager = new SessionManager( getApplicationContext() );
+            String uID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+            if (!mSessionManager.isLogin() && mSessionManager.checkUserId() != uID) {
+                Toast.makeText( this, "Please login to countinue", Toast.LENGTH_SHORT ).show();
+                Intent intent = new Intent( this, SPFlashScreen.class );
+                intent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK );
+                this.startActivity( intent );
+            }
+        } catch (NullPointerException e) {
+        }
+        //End check LoggedIn
+
         DrawerLayout drawer = (DrawerLayout) findViewById( R.id.drawer_layout );
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle( this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close );
         drawer.addDrawerListener( toggle );
@@ -116,7 +154,10 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
         NavigationView navigationView = (NavigationView) findViewById( R.id.nav_view );
         navigationView.setNavigationItemSelectedListener( this );
 
+        setInfoHeaderNavBar();
+
         mService = Common.getFCMservice();
+
 
         //map
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById( R.id.map );
@@ -150,6 +191,38 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
         updateFirebaseToken();
     }
 
+    private void setInfoHeaderNavBar() {
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mDatabaseReference = mFirebaseDatabase.getReference( "RidersInformation" ).child( mFirebaseAuth.getInstance().getCurrentUser().getUid() );
+
+        mDatabaseReference.addValueEventListener( new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                InformationUser uInfo = new InformationUser();
+//                InformationUser uInfo = dataSnapshot.getValue(InformationUser.class);
+                uInfo.setmEmail( dataSnapshot.child( "mEmail" ).getValue( String.class ) );
+                uInfo.setmName( dataSnapshot.child( "mName" ).getValue( String.class ) );
+
+
+                NavigationView navigationView = (NavigationView) findViewById( R.id.nav_view );
+                View headerView = navigationView.getHeaderView( 0 );
+                TextView txtHeaderNavHomeName = headerView.findViewById( R.id.txt_nav_header_name );
+                TextView txtHeaderNavHomeEmail = headerView.findViewById( R.id.txt_nav_header_email );
+                txtHeaderNavHomeName.setText( uInfo.getmName() );
+                txtHeaderNavHomeEmail.setText( uInfo.getmEmail() );
+
+
+                Log.v( "email_2", uInfo.getmEmail() + uInfo.getmName() );
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.e( "email_", "Failed for read data from Firebase, errors: " + databaseError );
+            }
+        } );
+    }
+
     private void updateFirebaseToken() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
         DatabaseReference tokens = db.getReference( Common.token_tbl );
@@ -175,10 +248,10 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
                     mService.sendMessage( content ).enqueue( new Callback<FCMResponse>() {
                         @Override
                         public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
-                            if (response.body().success == 1 ){
+                            if (response.body().success == 1) {
                                 Toast.makeText( Home.this, "Request sent!!", Toast.LENGTH_SHORT ).show();
 
-                            }else Toast.makeText( Home.this, "Faile", Toast.LENGTH_SHORT ).show();
+                            } else Toast.makeText( Home.this, "Faile", Toast.LENGTH_SHORT ).show();
                         }
 
                         @Override
@@ -278,9 +351,7 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
     }
 
     private void setUpLocation() {
-        if (ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED)
-        {
+        if (ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED) {
             //request runtime permission
             ActivityCompat.requestPermissions( this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, My_PREMISSON_REQUEST_CODE );
         } else {
@@ -301,8 +372,8 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
 
             // presense system
 
-            driversAvailable=FirebaseDatabase.getInstance().getReference(Common.driver_tbl);
-            driversAvailable.addValueEventListener(new ValueEventListener() {
+            driversAvailable = FirebaseDatabase.getInstance().getReference( Common.driver_tbl );
+            driversAvailable.addValueEventListener( new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     loadAllAvailableDriver();
@@ -312,7 +383,7 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
                 public void onCancelled(DatabaseError databaseError) {
 
                 }
-            });
+            } );
 
             final double latitude = mLastLocation.getLatitude();
             final double longitude = mLastLocation.getLongitude();
@@ -322,6 +393,43 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
             mUserMarker = mMap.addMarker( new MarkerOptions().position( new LatLng( latitude, longitude ) ).title( "You" ) );
 
             mMap.animateCamera( CameraUpdateFactory.newLatLngZoom( new LatLng( latitude, longitude ), 15.0f ) );
+
+            //MODIFY POSITION ZOOM BUTTON AND MY LYCATION BUTTON _HUNGTHINH
+
+
+            SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById( R.id.map );
+            int ZoomControl_id = 0x1;
+
+            // Find ZoomControl view
+            View zoomControls = mapFragment.getView().findViewById( ZoomControl_id );
+
+            if (zoomControls != null && zoomControls.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
+                // ZoomControl is inside of RelativeLayout
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) zoomControls.getLayoutParams();
+
+                // Update margins, set to 10dp
+                final int margin = (int) TypedValue.applyDimension( TypedValue.COMPLEX_UNIT_DIP, 10, getResources().getDisplayMetrics() );
+                params.setMargins( margin, margin, margin, margin + 220 );
+            }
+
+            View _mapView = mapFragment.getView();
+
+            // Get map views
+            View location_button = _mapView.findViewWithTag( "GoogleMapMyLocationButton" );
+            View zoom_in_button = _mapView.findViewWithTag( "GoogleMapZoomInButton" );
+
+            View zoom_layout = (View) zoom_in_button.getParent();
+
+            // adjust location button layout params above the zoom layout
+            RelativeLayout.LayoutParams location_layout = (RelativeLayout.LayoutParams) location_button.getLayoutParams();
+            location_layout.setMargins( 0, 0, 0, 20 );
+
+            location_layout.addRule( RelativeLayout.ALIGN_PARENT_TOP, 0 );
+            location_layout.addRule( RelativeLayout.ABOVE, zoom_layout.getId() );
+
+
+            mMap.setMyLocationEnabled( true );
+            mMap.getUiSettings().setMyLocationButtonEnabled( true );
 
             loadAllAvailableDriver();
 
@@ -467,9 +575,21 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
 
         } else if (id == R.id.nav_manage) {
 
-        } else if (id == R.id.nav_share) {
-
+        } else if (id == R.id.nav_myaccount) {
+            Intent intent = new Intent( this, MyAccount.class );
+            startActivity( intent );
         } else if (id == R.id.nav_send) {
+
+            mFirebaseAuth.getInstance().signOut();
+            FileUtils.deleteQuietly( getApplicationContext().getCacheDir() );
+            FileUtils.deleteQuietly( getApplicationContext().getExternalCacheDir() );
+            FileUtils.deleteQuietly( getApplicationContext().getCodeCacheDir() );
+            FileUtils.deleteQuietly( getApplicationContext().getDataDir() );
+
+            Intent intent = new Intent( this, LoginActivity.class );
+            intent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK );
+            startActivity( intent );
+
 
         }
 

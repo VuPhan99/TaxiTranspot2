@@ -1,7 +1,7 @@
 package com.dacs.sict.htxv.taxitranspot.Service;
-import  com.dacs.sict.htxv.taxitranspot.Common.Common;
-import  com.dacs.sict.htxv.taxitranspot.Model.Token;
-import com.google.android.gms.common.internal.service.Common;
+
+import com.dacs.sict.htxv.taxitranspot.Common.Common;
+import com.dacs.sict.htxv.taxitranspot.Model.Token;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -16,19 +16,18 @@ public class MyFirebaseIdService extends FirebaseInstanceIdService {
     public void onTokenRefresh() {
         super.onTokenRefresh();
         String refreshedToken = FirebaseInstanceId.getInstance().getToken();
-        updateTokenToServer(refreshedToken);//when have refres token, we need update to our realtime database
+        updateTokenToServer( refreshedToken );//when have refres token, we need update to our realtime database
 
     }
 
     private void updateTokenToServer(String refreshedToken) {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
-        DatabaseReference tokens = db.getReference( Common.token_tbl);
+        DatabaseReference tokens = db.getReference( Common.token_tbl );
 
-        Token token = new Token(refreshedToken);
+        Token token = new Token( refreshedToken );
 
-        if(FirebaseAuth.getInstance().getCurrentUser() !=null)//if already login, must update token
-            tokens.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                    .setValue(token);
+        if (FirebaseAuth.getInstance().getCurrentUser() != null)//if already login, must update token
+            tokens.child( FirebaseAuth.getInstance().getCurrentUser().getUid() ).setValue( token );
     }
 
 

@@ -28,4 +28,10 @@
     <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
+    <string name="home_drawer_myaccont">My account</string>
+    <string name="log_out">Log out</string>
+    <string name="myaccount_notifications_success">Success</string>
+    <string name="myaccount_notifications_fail">Failed</string>
+    <string name="myaccount_notifications_onchange">Please change your information</string>
 </resources>
+

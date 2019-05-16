@@ -51,6 +51,9 @@ dependencies {
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
     implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.mikhaellopez:circularimageview:3.2.0'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+
 
 
 }

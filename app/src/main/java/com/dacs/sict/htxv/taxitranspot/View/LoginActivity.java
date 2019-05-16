@@ -2,12 +2,13 @@ package com.dacs.sict.htxv.taxitranspot.View;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 
 import com.dacs.sict.htxv.taxitranspot.Common.Common;
+import com.dacs.sict.htxv.taxitranspot.Common.SessionManager;
 import com.dacs.sict.htxv.taxitranspot.Model.Rider;
 import com.dacs.sict.htxv.taxitranspot.R;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -46,10 +48,28 @@ public class  LoginActivity extends AppCompatActivity implements View.OnClickLis
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mDatabaseReference;
 
+    private SessionManager mSessionManager;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        try{
+            mSessionManager = new SessionManager(this);
+            String uID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            Log.e("dacs_", "In try catch ne1" + uID);
+            if(mSessionManager.isLogin() && mSessionManager.checkUserId().equals(uID)){
+                Log.e("dacs_", "In try catch ne");
+                Intent intent = new Intent(this,Home.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+            }
+
+        }catch (NullPointerException e){
+            Log.e("dacs_", String.valueOf(e));
+        }
 
         //Add Controlls
         addControls();
