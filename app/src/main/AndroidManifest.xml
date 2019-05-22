@@ -56,6 +56,12 @@
         <activity android:name="com.dacs.sict.htxv.taxitranspot.View.MyAccount"
             android:theme="@style/AppTheme.NoActionBar">
         </activity>
+        <activity android:name="com.dacs.sict.htxv.taxitranspot.View.Support"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity android:name="com.dacs.sict.htxv.taxitranspot.View.Notifications"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
         <service android:name="com.dacs.sict.htxv.taxitranspot.Service.MyFirebaseIdService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTACE_ID_EVENT"></action>

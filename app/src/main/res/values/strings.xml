@@ -33,5 +33,6 @@
     <string name="myaccount_notifications_success">Success</string>
     <string name="myaccount_notifications_fail">Failed</string>
     <string name="myaccount_notifications_onchange">Please change your information</string>
+    <string name="google_direction_api">AIzaSyAYiYWIwvOOmmdKjr9XyJaycXu5sVNsV14</string>
 </resources>
 

@@ -18,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dacs.sict.htxv.taxitranspot.Common.Common;
 import com.dacs.sict.htxv.taxitranspot.Common.SessionManager;
 import com.dacs.sict.htxv.taxitranspot.Model.InformationUser;
 import com.dacs.sict.htxv.taxitranspot.R;
@@ -118,7 +119,7 @@ public class MyAccount extends AppCompatActivity implements View.OnClickListener
         mWaitingDialog = new SpotsDialog(MyAccount.this,"Getting Information");
         mWaitingDialog.show();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        mDatabaseReference = mFirebaseDatabase.getReference("RidersInformation").child(mFirebaseAuth.getInstance().getCurrentUser().getUid());
+        mDatabaseReference = mFirebaseDatabase.getReference( Common.user_rider_tbl ).child(mFirebaseAuth.getInstance().getCurrentUser().getUid());
         mDatabaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

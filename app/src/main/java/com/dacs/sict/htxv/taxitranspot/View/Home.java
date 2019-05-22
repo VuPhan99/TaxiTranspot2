@@ -43,9 +43,13 @@ import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -64,7 +68,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
 
-import org.apache.commons.io.FileUtils;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -91,6 +95,11 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
     GeoFire geoFire;
 
     Marker mUserMarker;
+
+    private PlaceAutocompleteFragment place_location, place_destination;
+    private String mPlaceLocation,mPlaceDestination;
+
+    private List<LatLng> polyLineList;
 
     private FirebaseAuth mFirebaseAuth;
     private FirebaseDatabase mFirebaseDatabase;
@@ -166,14 +175,14 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
 
         //Init view
         imgExpandable = (ImageView) findViewById( R.id.imgExpandable );
-        mBottomSheet = (BottomSheetRiderFragment) BottomSheetRiderFragment.newInstance( "Rider bottom sheet" );
-        imgExpandable.setOnClickListener( new View.OnClickListener() {
+//        mBottomSheet = (BottomSheetRiderFragment) BottomSheetRiderFragment.newInstance( "Rider bottom sheet" );
+    /*    imgExpandable.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mBottomSheet.show( getSupportFragmentManager(), mBottomSheet.getTag() );
             }
         } );
-
+*/
         btnPickupRequest = (Button) findViewById( R.id.btnPickupRequest );
         btnPickupRequest.setOnClickListener( new View.OnClickListener() {
             @Override
@@ -185,6 +194,90 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
 
             }
         } );
+
+        place_location = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById( R.id.place_location );
+        place_destination = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById( R.id.place_destination );
+
+
+        place_location.setOnPlaceSelectedListener( new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                mPlaceLocation = place.getAddress().toString();
+                mMap.clear();
+                mUserMarker = mMap.addMarker( new MarkerOptions().position( place.getLatLng() ).icon( BitmapDescriptorFactory.defaultMarker() ).title( "Pickup Here" ) );
+                mMap.animateCamera( CameraUpdateFactory.newLatLngZoom( place.getLatLng(),15.0f ) );
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i( "", "An error occurred: " + status );
+
+            }
+        } );
+        place_destination.setOnPlaceSelectedListener( new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                mPlaceDestination = place.getAddress().toString();
+
+                mUserMarker = mMap.addMarker( new MarkerOptions().position( place.getLatLng() ).icon( BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE) ) );
+                mMap.animateCamera( CameraUpdateFactory.newLatLngZoom( place.getLatLng(),15.0f ) );
+//
+//                BottomSheetRiderFragment mbottomSheet = BottomSheetRiderFragment.newInstance( mPlaceLocation,mPlaceDestination );
+//                mbottomSheet.show( getSupportFragmentManager(),mBottomSheet.getTag() );
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i( "", "An error occurred: " + status );
+
+            }
+        } );
+
+
+       /* places = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_location);
+        places.setOnPlaceSelectedListener( new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                Log.i("", "Place: " + place.getName());
+
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i("", "An error occurred: " + status);
+
+            }
+        } );
+
+        int PLACE_AUTOCOMPLETE_REQUEST_CODE = 1;
+        try {
+            Intent intent =
+                    new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
+                            .build(this);
+            startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE);
+        } catch (GooglePlayServicesRepairableException e) {
+            // TODO: Handle the error.
+        } catch (GooglePlayServicesNotAvailableException e) {
+            // TODO: Handle the error.
+        }*/
+
+       /* polyLineList = new ArrayList<>();
+
+        //Places API
+        places = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.place_location);
+        places.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                    destination = place.getAddress().toString();
+                    destination = destination.replace(" ", "+");
+                    getDirection();
+            }
+
+            @Override
+            public void onError(Status status) {
+                Toast.makeText(Home.this, "" + status.toString(), Toast.LENGTH_SHORT).show();
+            }
+        });*/
 
         setUpLocation();
 
@@ -222,6 +315,7 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
             }
         } );
     }
+
 
     private void updateFirebaseToken() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
@@ -567,29 +661,31 @@ public class Home extends AppCompatActivity implements NavigationView.OnNavigati
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_myaccount) {
+        if (id == R.id.nav_myaccount) {
             Intent intent = new Intent( this, MyAccount.class );
             startActivity( intent );
-        } else if (id == R.id.nav_send) {
+            // Handle the camera action
+        } else if (id == R.id.nav_notifications) {
+            Intent intent = new Intent( this, Notifications.class );
+            startActivity( intent );
+
+        } else if (id == R.id.nav_history) {
+
+        } else if (id == R.id.nav_support) {
+            Intent intentsuport = new Intent( this, Support.class );
+            startActivity( intentsuport );
+
+        } else if (id == R.id.nav_logout) {
 
             mFirebaseAuth.getInstance().signOut();
-            FileUtils.deleteQuietly( getApplicationContext().getCacheDir() );
+            /*FileUtils.deleteQuietly( getApplicationContext().getCacheDir() );
             FileUtils.deleteQuietly( getApplicationContext().getExternalCacheDir() );
             FileUtils.deleteQuietly( getApplicationContext().getCodeCacheDir() );
-            FileUtils.deleteQuietly( getApplicationContext().getDataDir() );
+            FileUtils.deleteQuietly( getApplicationContext().getDataDir() );*/
 
             Intent intent = new Intent( this, LoginActivity.class );
             intent.setFlags( Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK );
             startActivity( intent );
-
 
         }
 

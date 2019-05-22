@@ -11,12 +11,14 @@ import android.view.ViewGroup;
 import com.dacs.sict.htxv.taxitranspot.R;
 
 public class BottomSheetRiderFragment extends BottomSheetDialogFragment {
+    String mLocation, mDestination;
     String mTag;
-    public static BottomSheetRiderFragment newInstance(String tag)
+    public static BottomSheetRiderFragment newInstance(String location, String destination)
     {
         BottomSheetRiderFragment f = new BottomSheetRiderFragment();
         Bundle args = new Bundle();
-        args.putString("TAG",tag);
+        args.putString("Location",location);
+        args.putString( "Destination", destination );
         f.setArguments(args);
         return  f;
 
@@ -26,7 +28,8 @@ public class BottomSheetRiderFragment extends BottomSheetDialogFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mTag = getArguments().getString("TAG");
+        mLocation = getArguments().getString( "location" );
+        mDestination = getArguments().getString( "destination" );
 
     }
 
